@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE 動態貼圖 MP4 轉 APNG 工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/upng-js/2.1.0/UPNG.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #06C755;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .specs {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #06C755;
+        }
+
+        .specs h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .specs ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .specs li {
+            padding: 8px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .specs li:before {
+            content: "✓ ";
+            color: #06C755;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .upload-section {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: #06C755;
+            background: #f8fff9;
+        }
+
+        .upload-section.dragover {
+            border-color: #06C755;
+            background: #e6ffe6;
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: #06C755;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #05b04b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(6, 199, 85, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .setting-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .setting-group select,
+        .setting-group input[type="number"],
+        .setting-group input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .setting-group input[type="range"] {
+            padding: 0;
+        }
+
+        .value-display {
+            text-align: center;
+            margin-top: 5px;
+            color: #06C755;
+            font-weight: bold;
+        }
+
+        .preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .preview-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .preview-box h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .preview-box video,
+        .preview-box canvas,
+        .preview-box img {
+            max-width: 100%;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #1976d2;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .error-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06C755, #05b04b);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .download-section {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #06C755, #05b04b);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .download-section h3 {
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            background: white;
+            color: #06C755;
+            padding: 15px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            color: #666;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .preview-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 LINE 動態貼圖轉換工具</h1>
+        <p class="subtitle">MP4 → APNG | 完全符合 LINE Creators Market 上架標準</p>
+
+        <div class="specs">
+            <h3>📋 LINE 動態貼圖規格</h3>
+            <ul>
+                <li>尺寸: W320 × H270 以內 (寬或高至少一邊需 ≥270px)</li>
+                <li>播放時間: 1-4 秒 (不可有小數點)</li>
+                <li>畫格數: 5-20 個</li>
+                <li>重複次數: 1-4 次</li>
+                <li>檔案大小: ≤ 300KB (靜態貼圖為 1MB)</li>
+                <li>格式: APNG (.png)</li>
+            </ul>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">🎬</div>
+            <h3>拖曳 MP4 檔案到此處</h3>
+            <p style="margin: 10px 0; color: #666;">或</p>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
+            <input type="file" id="fileInput" accept="video/mp4" />
+        </div>
+
+        <div class="settings">
+            <div class="setting-group">
+                <label for="duration">播放時長 (秒)</label>
+                <select id="duration">
+                    <option value="1">1 秒</option>
+                    <option value="2">2 秒</option>
+                    <option value="3">3 秒</option>
+                    <option value="4" selected>4 秒</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="frames">畫格數</label>
+                <input type="range" id="frames" min="5" max="20" value="10" />
+                <div class="value-display" id="framesValue">10 畫格</div>
+            </div>
+
+            <div class="setting-group">
+                <label for="loops">重複次數</label>
+                <select id="loops">
+                    <option value="1">1 次</option>
+                    <option value="2">2 次</option>
+                    <option value="3">3 次</option>
+                    <option value="4">4 次</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="size">輸出尺寸</label>
+                <select id="size">
+                    <option value="270x270">270×270 (正方形)</option>
+                    <option value="320x270" selected>320×270 (橫向)</option>
+                    <option value="270x320">270×320 (直向)</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button class="btn" id="convertBtn" disabled>開始轉換 APNG</button>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h4>原始 MP4</h4>
+                    <video id="videoPreview" controls></video>
+                    <div class="info-box" id="videoInfo"></div>
+                </div>
+                <div class="preview-box">
+                    <h4>轉換後 APNG</h4>
+                    <img id="apngPreview" style="display: none;" />
+                    <canvas id="previewCanvas"></canvas>
+                    <div class="info-box" id="apngInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section" id="downloadSection">
+            <h3>✅ 轉換完成!</h3>
+            <p style="margin-bottom: 20px;">您的 APNG 檔案已準備好下載</p>
+            <a href="#" class="download-btn" id="downloadBtn">📥 下載 APNG 檔案</a>
+        </div>
+
+        <div class="footer">
+            <p>💡 提示: 建議使用短片段影片,並確保主要動作清晰</p>
+            <p style="margin-top: 10px;">由 Studio 10 提供技術支援 | 符合 LINE Creators Market 規格</p>
+        </div>
+    </div>
+
+    <script>
+        let videoFile = null;
+        let videoElement = document.getElementById('videoPreview');
+        let canvas = document.getElementById('previewCanvas');
+        let ctx = canvas.getContext('2d');
+
+        // 檔案上傳處理
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const convertBtn = document.getElementById('convertBtn');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'video/mp4') {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+            videoElement.src = url;
+            videoElement.load();
+            
+            document.getElementById('previewSection').style.display = 'block';
+            convertBtn.disabled = false;
+
+            videoElement.onloadedmetadata = () => {
+                const duration = videoElement.duration.toFixed(2);
+                const width = videoElement.videoWidth;
+                const height = videoElement.videoHeight;
+                
+                document.getElementById('videoInfo').innerHTML = `
+                    <strong>影片資訊:</strong><br>
+                    尺寸: ${width} × ${height}<br>
+                    時長: ${duration} 秒
+                `;
+            };
+        }
+
+        // 畫格數滑桿
+        document.getElementById('frames').addEventListener('input', (e) => {
+            document.getElementById('framesValue').textContent = `${e.target.value} 畫格`;
+        });
+
+        // 轉換按鈕
+        convertBtn.addEventListener('click', convertToAPNG);
+
+        async function convertToAPNG() {
+            if (!videoFile) return;
+
+            const duration = parseInt(document.getElementById('duration').value);
+            const frameCount = parseInt(document.getElementById('frames').value);
+            const loops = parseInt(document.getElementById('loops').value);
+            const sizeStr = document.getElementById('size').value;
+            const [width, height] = sizeStr.split('x').map(Number);
+
+            // 檢查總播放時間
+            const totalPlayTime = duration * loops;
+            if (totalPlayTime > 4) {
+                alert(`⚠️ 總播放時間 (${totalPlayTime}秒) 超過 4 秒限制!\n請調整播放時長或重複次數。`);
+                return;
+            }
+
+            convertBtn.disabled = true;
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('downloadSection').style.display = 'none';
+
+            try {
+                // 設置 canvas 尺寸
+                canvas.width = width;
+                canvas.height = height;
+
+                const frames = [];
+                const delays = [];
+                const frameDelay = Math.floor((duration / frameCount) * 1000); // 毫秒
+
+                // 提取畫格
+                for (let i = 0; i < frameCount; i++) {
+                    const time = (i / frameCount) * duration;
+                    videoElement.currentTime = time;
+                    
+                    await new Promise(resolve => {
+                        videoElement.onseeked = resolve;
+                    });
+
+                    // 計算縮放以填滿 canvas
+                    const scale = Math.max(width / videoElement.videoWidth, height / videoElement.videoHeight);
+                    const scaledWidth = videoElement.videoWidth * scale;
+                    const scaledHeight = videoElement.videoHeight * scale;
+                    const x = (width - scaledWidth) / 2;
+                    const y = (height - scaledHeight) / 2;
+
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.drawImage(videoElement, x, y, scaledWidth, scaledHeight);
+
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    frames.push(imageData.data);
+                    delays.push(frameDelay);
+
+                    const progress = ((i + 1) / frameCount) * 100;
+                    document.getElementById('progressFill').style.width = progress + '%';
+                }
+
+                // 使用 UPNG 創建 APNG
+                const apng = UPNG.encode(frames, width, height, 0, delays);
+                const blob = new Blob([apng], { type: 'image/png' });
+                const size = (blob.size / 1024).toFixed(2);
+
+                // 顯示結果
+                const url = URL.createObjectURL(blob);
+                const apngPreview = document.getElementById('apngPreview');
+                apngPreview.src = url;
+                apngPreview.style.display = 'block';
+                canvas.style.display = 'none';
+
+                let infoHTML = `
+                    <strong>APNG 資訊:</strong><br>
+                    尺寸: ${width} × ${height}<br>
+                    畫格數: ${frameCount}<br>
+                    每格延遲: ${frameDelay}ms<br>
+                    重複: ${loops} 次<br>
+                    檔案大小: ${size} KB
+                `;
+
+                let statusBox = document.getElementById('apngInfo');
+                
+                if (blob.size > 300 * 1024) {
+                    statusBox.className = 'error-box';
+                    infoHTML += '<br><br>❌ 檔案超過 300KB,無法上架!<br>建議減少畫格數或降低尺寸。';
+                } else {
+                    statusBox.className = 'info-box';
+                    infoHTML += '<br><br>✅ 符合 LINE 規格!';
+                    
+                    // 顯示下載按鈕
+                    document.getElementById('downloadSection').style.display = 'block';
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.href = url;
+                    downloadBtn.download = `LINE_Sticker_${Date.now()}.png`;
+                }
+
+                statusBox.innerHTML = infoHTML;
+
+            } catch (error) {
+                alert('轉換失敗: ' + error.message);
+                console.error(error);
+            } finally {
+                convertBtn.disabled = false;
+                document.getElementById('progressBar').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
